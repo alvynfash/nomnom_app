@@ -10,6 +10,7 @@ class PhotoUploadWidget extends StatefulWidget {
   final String recipeId;
   final int maxPhotos;
   final bool enabled;
+  final bool compactMode;
 
   const PhotoUploadWidget({
     super.key,
@@ -18,6 +19,7 @@ class PhotoUploadWidget extends StatefulWidget {
     required this.recipeId,
     this.maxPhotos = 5,
     this.enabled = true,
+    this.compactMode = false,
   });
 
   @override
@@ -61,10 +63,12 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
     return GridView.builder(
       shrinkWrap: true,
       physics: const NeverScrollableScrollPhysics(),
-      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 3,
-        crossAxisSpacing: 8,
-        mainAxisSpacing: 8,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: widget.compactMode
+            ? 5
+            : 3, // More columns in compact mode
+        crossAxisSpacing: widget.compactMode ? 6 : 8,
+        mainAxisSpacing: widget.compactMode ? 6 : 8,
         childAspectRatio: 1,
       ),
       itemCount: widget.photoUrls.length,

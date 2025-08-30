@@ -36,6 +36,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
   late List<String> _photoUrls;
   List<String> _availableTags = [];
 
+  // Time unit selections
+  String _prepTimeUnit = 'minutes';
+  String _cookTimeUnit = 'minutes';
+
   // Auto-save and form state management
   Timer? _autoSaveTimer;
   bool _hasUnsavedChanges = false;
@@ -70,8 +74,24 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
 
       _titleController.text = _title;
       _descriptionController.text = _description;
-      _prepTimeController.text = _prepTime.toString();
-      _cookTimeController.text = _cookTime.toString();
+
+      // Handle time units - convert from minutes to appropriate unit
+      if (_prepTime >= 60 && _prepTime % 60 == 0) {
+        _prepTimeUnit = 'hours';
+        _prepTimeController.text = (_prepTime ~/ 60).toString();
+      } else {
+        _prepTimeUnit = 'minutes';
+        _prepTimeController.text = _prepTime.toString();
+      }
+
+      if (_cookTime >= 60 && _cookTime % 60 == 0) {
+        _cookTimeUnit = 'hours';
+        _cookTimeController.text = (_cookTime ~/ 60).toString();
+      } else {
+        _cookTimeUnit = 'minutes';
+        _cookTimeController.text = _cookTime.toString();
+      }
+
       _servingsController.text = _servings.toString();
     } else {
       _title = '';
@@ -1013,28 +1033,49 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
           child: ListView(
             padding: const EdgeInsets.all(20),
             children: [
-              // Recipe Title Section
-              _buildSectionCard(
+              // Recipe Details Section - Modern Layout
+              _buildModernSectionCard(
                 title: 'Recipe Details',
                 icon: Icons.restaurant_menu_rounded,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    // Title Field - Prominent
                     TextFormField(
                       controller: _titleController,
                       decoration: InputDecoration(
                         labelText: 'Recipe Title',
                         hintText: 'Enter a delicious recipe name',
-                        prefixIcon: const Icon(Icons.title_rounded),
                         border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.3),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        focusedBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                          borderSide: BorderSide(
+                            color: colorScheme.primary,
+                            width: 2,
+                          ),
                         ),
                         filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.3),
+                        fillColor: colorScheme.surface,
+                        contentPadding: const EdgeInsets.symmetric(
+                          horizontal: 20,
+                          vertical: 16,
+                        ),
                       ),
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w600,
+                        color: colorScheme.onSurface,
                       ),
                       validator: (value) {
                         if (value == null || value.isEmpty) {
@@ -1044,159 +1085,229 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                       },
                       onChanged: (value) {
                         _title = value;
-                        // Trigger real-time validation
                         _formKey.currentState?.validate();
                       },
                     ),
+
                     const SizedBox(height: 20),
-                    // Description field
+
+                    // Description Field - Compact
                     TextFormField(
                       controller: _descriptionController,
                       decoration: InputDecoration(
                         labelText: 'Description (Optional)',
-                        hintText: 'Describe your recipe...',
-                        prefixIcon: const Icon(Icons.description_rounded),
+                        hintText: 'What makes this recipe special?',
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.2),
+                          ),
+                        ),
+                        enabledBorder: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(12),
+                          borderSide: BorderSide(
+                            color: colorScheme.outline.withValues(alpha: 0.15),
+                          ),
                         ),
                         filled: true,
                         fillColor: colorScheme.surfaceContainerHighest
                             .withValues(alpha: 0.3),
+                        contentPadding: const EdgeInsets.all(16),
                       ),
                       style: const TextStyle(fontSize: 14),
-                      maxLines: 3,
-                      maxLength: 500,
+                      maxLines: 2,
+                      maxLength: 200,
                       validator: _validateDescriptionField,
                       onChanged: (value) {
                         _description = value;
                         _formKey.currentState?.validate();
                       },
                     ),
-                    const SizedBox(height: 20),
-                    // Difficulty dropdown
-                    DropdownButtonFormField<RecipeDifficulty>(
-                      value: _difficulty,
-                      decoration: InputDecoration(
-                        labelText: 'Difficulty Level',
-                        prefixIcon: const Icon(Icons.bar_chart_rounded),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                    const SizedBox(height: 24),
+
+                    // Compact Info Grid
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withValues(
+                          alpha: 0.1,
                         ),
-                        filled: true,
-                        fillColor: colorScheme.surfaceContainerHighest
-                            .withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.1),
+                        ),
                       ),
-                      items: RecipeDifficulty.values.map((difficulty) {
-                        return DropdownMenuItem(
-                          value: difficulty,
-                          child: Row(
+                      child: Column(
+                        children: [
+                          // First Row: Difficulty and Servings
+                          Row(
                             children: [
-                              _buildDifficultyIcon(difficulty, colorScheme),
-                              const SizedBox(width: 8),
-                              Text(difficulty.displayName),
+                              // Difficulty - Compact Chips
+                              Expanded(
+                                flex: 3,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Difficulty',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.primary,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _buildDifficultyChips(colorScheme),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 20),
+                              // Servings - Compact
+                              Expanded(
+                                flex: 2,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Servings',
+                                      style: TextStyle(
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.w600,
+                                        color: colorScheme.primary,
+                                        letterSpacing: 0.5,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Container(
+                                      height: 40,
+                                      decoration: BoxDecoration(
+                                        color: colorScheme.surface,
+                                        borderRadius: BorderRadius.circular(12),
+                                        border: Border.all(
+                                          color: colorScheme.outline.withValues(
+                                            alpha: 0.2,
+                                          ),
+                                        ),
+                                      ),
+                                      child: TextFormField(
+                                        controller: _servingsController,
+                                        decoration: InputDecoration(
+                                          hintText: '4',
+                                          prefixIcon: Icon(
+                                            Icons.people_rounded,
+                                            size: 18,
+                                            color: colorScheme.primary,
+                                          ),
+                                          border: InputBorder.none,
+                                          contentPadding:
+                                              const EdgeInsets.symmetric(
+                                                horizontal: 12,
+                                                vertical: 8,
+                                              ),
+                                        ),
+                                        style: const TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w500,
+                                        ),
+                                        keyboardType: TextInputType.number,
+                                        inputFormatters: [
+                                          FilteringTextInputFormatter
+                                              .digitsOnly,
+                                        ],
+                                        validator: (value) {
+                                          if (value == null || value.isEmpty) {
+                                            return 'Required';
+                                          }
+                                          return _validateServingsField(value);
+                                        },
+                                        onChanged: (value) {
+                                          _servings = int.tryParse(value) ?? 1;
+                                          _formKey.currentState?.validate();
+                                        },
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
                             ],
                           ),
-                        );
-                      }).toList(),
-                      onChanged: (value) {
-                        if (value != null) {
-                          setState(() {
-                            _difficulty = value;
-                          });
-                        }
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    // Time and Servings Row
-                    Row(
-                      children: [
-                        Expanded(
-                          child: TextFormField(
-                            controller: _prepTimeController,
-                            decoration: InputDecoration(
-                              labelText: 'Prep Time',
-                              hintText: 'Minutes',
-                              prefixIcon: const Icon(Icons.timer_outlined),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
+
+                          const SizedBox(height: 20),
+
+                          // Second Row: Time Fields - Compact
+                          Row(
+                            children: [
+                              // Prep Time
+                              Expanded(
+                                child: _buildCompactTimeField(
+                                  'Prep Time',
+                                  Icons.timer_outlined,
+                                  _prepTimeController,
+                                  _prepTimeUnit,
+                                  (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _prepTimeUnit = value;
+                                        final currentValue =
+                                            int.tryParse(
+                                              _prepTimeController.text,
+                                            ) ??
+                                            0;
+                                        _prepTime = value == 'hours'
+                                            ? currentValue * 60
+                                            : currentValue;
+                                      });
+                                    }
+                                  },
+                                  (value) {
+                                    final time = int.tryParse(value) ?? 0;
+                                    _prepTime = _prepTimeUnit == 'hours'
+                                        ? time * 60
+                                        : time;
+                                    _formKey.currentState?.validate();
+                                  },
+                                  colorScheme,
+                                ),
                               ),
-                              filled: true,
-                              fillColor: colorScheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
+                              const SizedBox(width: 16),
+                              // Cook Time
+                              Expanded(
+                                child: _buildCompactTimeField(
+                                  'Cook Time',
+                                  Icons.local_fire_department_rounded,
+                                  _cookTimeController,
+                                  _cookTimeUnit,
+                                  (value) {
+                                    if (value != null) {
+                                      setState(() {
+                                        _cookTimeUnit = value;
+                                        final currentValue =
+                                            int.tryParse(
+                                              _cookTimeController.text,
+                                            ) ??
+                                            0;
+                                        _cookTime = value == 'hours'
+                                            ? currentValue * 60
+                                            : currentValue;
+                                      });
+                                    }
+                                  },
+                                  (value) {
+                                    final time = int.tryParse(value) ?? 0;
+                                    _cookTime = _cookTimeUnit == 'hours'
+                                        ? time * 60
+                                        : time;
+                                    _formKey.currentState?.validate();
+                                  },
+                                  colorScheme,
+                                ),
+                              ),
                             ],
-                            validator: (value) =>
-                                _validateTimeField(value, 'prepTime'),
-                            onChanged: (value) {
-                              _prepTime = int.tryParse(value) ?? 0;
-                              _formKey.currentState?.validate();
-                            },
                           ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _cookTimeController,
-                            decoration: InputDecoration(
-                              labelText: 'Cook Time',
-                              hintText: 'Minutes',
-                              prefixIcon: const Icon(
-                                Icons.local_fire_department_rounded,
-                              ),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: colorScheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            validator: (value) =>
-                                _validateTimeField(value, 'cookTime'),
-                            onChanged: (value) {
-                              _cookTime = int.tryParse(value) ?? 0;
-                              _formKey.currentState?.validate();
-                            },
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: TextFormField(
-                            controller: _servingsController,
-                            decoration: InputDecoration(
-                              labelText: 'Servings',
-                              hintText: 'People',
-                              prefixIcon: const Icon(Icons.people_rounded),
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              filled: true,
-                              fillColor: colorScheme.surfaceContainerHighest
-                                  .withValues(alpha: 0.3),
-                            ),
-                            keyboardType: TextInputType.number,
-                            inputFormatters: [
-                              FilteringTextInputFormatter.digitsOnly,
-                            ],
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Please enter number of servings';
-                              }
-                              return _validateServingsField(value);
-                            },
-                            onChanged: (value) {
-                              _servings = int.tryParse(value) ?? 1;
-                              _formKey.currentState?.validate();
-                            },
-                          ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ],
                 ),
@@ -1216,6 +1327,7 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                       'temp_${DateTime.now().millisecondsSinceEpoch}',
                   maxPhotos: 5,
                   enabled: true,
+                  compactMode: true, // This will make photos smaller
                 ),
               ),
 
@@ -1226,107 +1338,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                 title: 'Ingredients',
                 icon: Icons.shopping_cart_rounded,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Add Ingredient Form
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withValues(
-                          alpha: 0.3,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: colorScheme.outline.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                flex: 3,
-                                child: TextFormField(
-                                  controller: _ingredientNameController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Ingredient',
-                                    hintText: 'e.g., Flour',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: _ingredientQuantityController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Amount',
-                                    hintText: '1',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                  keyboardType:
-                                      const TextInputType.numberWithOptions(
-                                        decimal: true,
-                                      ),
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Expanded(
-                                flex: 2,
-                                child: TextFormField(
-                                  controller: _ingredientUnitController,
-                                  decoration: InputDecoration(
-                                    labelText: 'Unit',
-                                    hintText: 'cups',
-                                    border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    contentPadding: const EdgeInsets.symmetric(
-                                      horizontal: 12,
-                                      vertical: 8,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: _addIngredient,
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Add Ingredient'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: colorScheme.primary,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
+                    // Ingredients List (moved above the form)
                     if (_ingredients.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      // Ingredients List
                       ...List.generate(_ingredients.length, (index) {
                         final ingredient = _ingredients[index];
                         return Container(
@@ -1379,7 +1394,112 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                           ),
                         );
                       }),
+                      const SizedBox(height: 16),
                     ],
+
+                    // Add Ingredient Form (moved below the list)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withValues(
+                          alpha: 0.3,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          Row(
+                            children: [
+                              Expanded(
+                                flex: 3,
+                                child: TextFormField(
+                                  controller: _ingredientNameController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Ingredient',
+                                    hintText: 'e.g., Flour',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 2,
+                                child: TextFormField(
+                                  controller: _ingredientQuantityController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Amount',
+                                    hintText: '1',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                  keyboardType:
+                                      const TextInputType.numberWithOptions(
+                                        decimal: true,
+                                      ),
+                                  inputFormatters: [
+                                    FilteringTextInputFormatter.allow(
+                                      RegExp(r'^\d*\.?\d*'),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                flex: 2,
+                                child: TextFormField(
+                                  controller: _ingredientUnitController,
+                                  decoration: InputDecoration(
+                                    labelText: 'Unit',
+                                    hintText: 'cups',
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 12,
+                                      vertical: 8,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Smaller, left-aligned button
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.icon(
+                              onPressed: _addIngredient,
+                              icon: const Icon(Icons.add_rounded, size: 18),
+                              label: const Text('Add Ingredient'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: colorScheme.primary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1391,59 +1511,10 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                 title: 'Instructions',
                 icon: Icons.list_alt_rounded,
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Add Instruction Form
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: colorScheme.secondaryContainer.withValues(
-                          alpha: 0.3,
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(
-                          color: colorScheme.outline.withValues(alpha: 0.2),
-                        ),
-                      ),
-                      child: Column(
-                        children: [
-                          TextFormField(
-                            controller: _instructionController,
-                            decoration: InputDecoration(
-                              labelText: 'Instruction Step',
-                              hintText: 'Describe what to do...',
-                              border: OutlineInputBorder(
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              contentPadding: const EdgeInsets.all(16),
-                            ),
-                            maxLines: 3,
-                            minLines: 2,
-                          ),
-                          const SizedBox(height: 12),
-                          SizedBox(
-                            width: double.infinity,
-                            child: FilledButton.icon(
-                              onPressed: _addInstruction,
-                              icon: const Icon(Icons.add_rounded),
-                              label: const Text('Add Step'),
-                              style: FilledButton.styleFrom(
-                                backgroundColor: colorScheme.secondary,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 12,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
+                    // Instructions List (moved above the form)
                     if (_instructions.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      // Instructions List
                       ...List.generate(_instructions.length, (index) {
                         return Container(
                           margin: const EdgeInsets.only(bottom: 12),
@@ -1499,7 +1570,59 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
                           ),
                         );
                       }),
+                      const SizedBox(height: 16),
                     ],
+
+                    // Add Instruction Form (moved below the list)
+                    Container(
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: colorScheme.secondaryContainer.withValues(
+                          alpha: 0.3,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.outline.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Column(
+                        children: [
+                          TextFormField(
+                            controller: _instructionController,
+                            decoration: InputDecoration(
+                              labelText: 'Instruction Step',
+                              hintText: 'Describe what to do...',
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              contentPadding: const EdgeInsets.all(16),
+                            ),
+                            maxLines: 3,
+                            minLines: 2,
+                          ),
+                          const SizedBox(height: 12),
+                          // Smaller, left-aligned button
+                          Align(
+                            alignment: Alignment.centerLeft,
+                            child: FilledButton.icon(
+                              onPressed: _addInstruction,
+                              icon: const Icon(Icons.add_rounded, size: 18),
+                              label: const Text('Add Step'),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: colorScheme.secondary,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 8,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -1600,29 +1723,242 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
     );
   }
 
-  Widget _buildDifficultyIcon(
-    RecipeDifficulty difficulty,
-    ColorScheme colorScheme,
-  ) {
+  Widget _buildModernSectionCard({
+    required String title,
+    required IconData icon,
+    required Widget child,
+  }) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: colorScheme.surface,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: colorScheme.outline.withValues(alpha: 0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.shadow.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Icon(icon, color: colorScheme.onPrimary, size: 20),
+                ),
+                const SizedBox(width: 16),
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w700,
+                    color: colorScheme.onSurface,
+                    letterSpacing: -0.5,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
+            child,
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDifficultyChips(ColorScheme colorScheme) {
+    return Row(
+      children: RecipeDifficulty.values.map((difficulty) {
+        final isSelected = _difficulty == difficulty;
+        final colors = _getDifficultyColors(difficulty);
+
+        return Padding(
+          padding: const EdgeInsets.only(right: 8),
+          child: GestureDetector(
+            onTap: () {
+              setState(() {
+                _difficulty = difficulty;
+              });
+            },
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 200),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: isSelected ? colors['bg'] : colorScheme.surface,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(
+                  color: isSelected
+                      ? colors['border']!
+                      : colorScheme.outline.withValues(alpha: 0.3),
+                  width: isSelected ? 2 : 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    colors['icon'] as IconData,
+                    size: 14,
+                    color: isSelected
+                        ? colors['iconColor']
+                        : colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    difficulty.displayName,
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: isSelected
+                          ? colors['textColor']
+                          : colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }).toList(),
+    );
+  }
+
+  Map<String, dynamic> _getDifficultyColors(RecipeDifficulty difficulty) {
     switch (difficulty) {
       case RecipeDifficulty.easy:
-        return Icon(
-          Icons.sentiment_satisfied_rounded,
-          color: Colors.green,
-          size: 18,
-        );
+        return {
+          'bg': Colors.green.withValues(alpha: 0.1),
+          'border': Colors.green,
+          'icon': Icons.sentiment_satisfied_rounded,
+          'iconColor': Colors.green,
+          'textColor': Colors.green.shade700,
+        };
       case RecipeDifficulty.medium:
-        return Icon(
-          Icons.sentiment_neutral_rounded,
-          color: Colors.orange,
-          size: 18,
-        );
+        return {
+          'bg': Colors.orange.withValues(alpha: 0.1),
+          'border': Colors.orange,
+          'icon': Icons.sentiment_neutral_rounded,
+          'iconColor': Colors.orange,
+          'textColor': Colors.orange.shade700,
+        };
       case RecipeDifficulty.hard:
-        return Icon(
-          Icons.sentiment_very_dissatisfied_rounded,
-          color: Colors.red,
-          size: 18,
-        );
+        return {
+          'bg': Colors.red.withValues(alpha: 0.1),
+          'border': Colors.red,
+          'icon': Icons.sentiment_very_dissatisfied_rounded,
+          'iconColor': Colors.red,
+          'textColor': Colors.red.shade700,
+        };
     }
+  }
+
+  Widget _buildCompactTimeField(
+    String label,
+    IconData icon,
+    TextEditingController controller,
+    String currentUnit,
+    Function(String?) onUnitChanged,
+    Function(String) onTimeChanged,
+    ColorScheme colorScheme,
+  ) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: colorScheme.primary,
+            letterSpacing: 0.5,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Container(
+          height: 40,
+          decoration: BoxDecoration(
+            color: colorScheme.surface,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: colorScheme.outline.withValues(alpha: 0.2),
+            ),
+          ),
+          child: Row(
+            children: [
+              // Icon
+              Padding(
+                padding: const EdgeInsets.only(left: 12, right: 8),
+                child: Icon(icon, size: 16, color: colorScheme.primary),
+              ),
+              // Time Input
+              Expanded(
+                flex: 2,
+                child: TextFormField(
+                  controller: controller,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    hintText: '30',
+                    contentPadding: EdgeInsets.symmetric(vertical: 8),
+                  ),
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                  validator: (value) => _validateTimeField(
+                    value,
+                    label.toLowerCase().replaceAll(' ', ''),
+                  ),
+                  onChanged: onTimeChanged,
+                ),
+              ),
+              // Unit Dropdown
+              Container(
+                width: 60,
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: DropdownButtonFormField<String>(
+                  value: currentUnit,
+                  decoration: const InputDecoration(
+                    border: InputBorder.none,
+                    contentPadding: EdgeInsets.zero,
+                  ),
+                  style: TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                    color: colorScheme.onSurface,
+                  ),
+                  items: const [
+                    DropdownMenuItem(value: 'minutes', child: Text('min')),
+                    DropdownMenuItem(value: 'hours', child: Text('hrs')),
+                  ],
+                  onChanged: onUnitChanged,
+                  icon: Icon(
+                    Icons.keyboard_arrow_down_rounded,
+                    size: 16,
+                    color: colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
 }

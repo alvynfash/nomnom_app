@@ -354,18 +354,11 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   backgroundColor: colorScheme.primary,
                   foregroundColor: colorScheme.onPrimary,
                   flexibleSpace: FlexibleSpaceBar(
-                    title: Text(
-                      _recipe.title,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        shadows: [
-                          Shadow(
-                            offset: Offset(0, 1),
-                            blurRadius: 3,
-                            color: Colors.black26,
-                          ),
-                        ],
-                      ),
+                    title: _buildEnhancedTitle(colorScheme),
+                    titlePadding: const EdgeInsets.only(
+                      left: 16,
+                      bottom: 16,
+                      right: 72,
                     ),
                     background: _recipe.photoUrls.isNotEmpty
                         ? _buildPhotoGallery(colorScheme)
@@ -497,24 +490,55 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
           itemBuilder: (context, index) {
             return GestureDetector(
               onTap: () => _showFullScreenPhoto(index),
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [Colors.transparent, Colors.black26],
-                  ),
-                ),
-                child: ImageUtils.buildImage(
-                  _recipe.photoUrls[index],
-                  fit: BoxFit.cover,
-                  errorWidget: _buildDefaultBackground(colorScheme),
-                  loadingWidget: Center(
-                    child: CircularProgressIndicator(
-                      color: colorScheme.onPrimary,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ImageUtils.buildImage(
+                    _recipe.photoUrls[index],
+                    fit: BoxFit.cover,
+                    errorWidget: _buildDefaultBackground(colorScheme),
+                    loadingWidget: Center(
+                      child: CircularProgressIndicator(
+                        color: colorScheme.onPrimary,
+                      ),
                     ),
                   ),
-                ),
+                  // Enhanced gradient overlay for better text visibility
+                  Container(
+                    decoration: const BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        stops: [0.0, 0.3, 0.7, 1.0],
+                        colors: [
+                          Colors.black12,
+                          Colors.transparent,
+                          Colors.black26,
+                          Colors.black54,
+                        ],
+                      ),
+                    ),
+                  ),
+                  // Additional overlay for title area
+                  Positioned(
+                    bottom: 0,
+                    left: 0,
+                    right: 0,
+                    height: 80,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Colors.transparent,
+                            Colors.black.withValues(alpha: 0.7),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             );
           },
@@ -523,7 +547,7 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
         // Photo indicators
         if (_recipe.photoUrls.length > 1)
           Positioned(
-            bottom: 16,
+            bottom: 80, // Moved up to avoid title area
             left: 0,
             right: 0,
             child: Row(
@@ -537,8 +561,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: index == _currentPhotoIndex
-                        ? colorScheme.onPrimary
-                        : colorScheme.onPrimary.withValues(alpha: 0.5),
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.5),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 2,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -955,6 +986,59 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
       final years = (difference.inDays / 365).floor();
       return years == 1 ? '1 year ago' : '$years years ago';
     }
+  }
+
+  Widget _buildEnhancedTitle(ColorScheme colorScheme) {
+    // Determine if we have photos to adjust styling
+    final hasPhotos = _recipe.photoUrls.isNotEmpty;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        // More opaque background when overlaying photos
+        color: hasPhotos
+            ? Colors.black.withValues(alpha: 0.75)
+            : Colors.black.withValues(alpha: 0.4),
+        borderRadius: BorderRadius.circular(16),
+        border: hasPhotos
+            ? Border.all(color: Colors.white.withValues(alpha: 0.2), width: 1)
+            : null,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: hasPhotos ? 0.4 : 0.2),
+            blurRadius: hasPhotos ? 12 : 6,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Text(
+        _recipe.title,
+        style: TextStyle(
+          fontWeight: FontWeight.w700,
+          fontSize: _recipe.title.length > 30
+              ? 14
+              : 16, // Smaller font for long titles
+          color: Colors.white,
+          letterSpacing: 0.3,
+          height: 1.2,
+          shadows: [
+            Shadow(
+              offset: const Offset(0, 1),
+              blurRadius: 6,
+              color: Colors.black.withValues(alpha: 0.8),
+            ),
+            Shadow(
+              offset: const Offset(1, 1),
+              blurRadius: 3,
+              color: Colors.black.withValues(alpha: 0.6),
+            ),
+          ],
+        ),
+        maxLines: 2,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+      ),
+    );
   }
 }
 
