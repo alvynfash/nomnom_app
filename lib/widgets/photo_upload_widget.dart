@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../services/photo_service.dart';
+import '../utils/fade_page_route.dart';
 
 class PhotoUploadWidget extends StatefulWidget {
   final List<String> photoUrls;
@@ -413,30 +414,29 @@ class _PhotoUploadWidgetState extends State<PhotoUploadWidget> {
   }
 
   void _showPhotoPreview(String photoUrl, int index) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => PhotoPreviewScreen(
-          photoUrls: widget.photoUrls,
-          initialIndex: index,
-          onDelete: widget.enabled
-              ? (deleteIndex) async {
-                  Navigator.of(context).pop();
-                  await _deletePhoto(deleteIndex);
-                }
-              : null,
-          onReorder: widget.enabled
-              ? (oldIndex, newIndex) {
-                  final updatedUrls = List<String>.from(widget.photoUrls);
-                  final item = updatedUrls.removeAt(oldIndex);
-                  updatedUrls.insert(
-                    newIndex > oldIndex ? newIndex - 1 : newIndex,
-                    item,
-                  );
-                  widget.onPhotosChanged(updatedUrls);
-                  Navigator.of(context).pop();
-                }
-              : null,
-        ),
+    FadeNavigation.push(
+      context,
+      PhotoPreviewScreen(
+        photoUrls: widget.photoUrls,
+        initialIndex: index,
+        onDelete: widget.enabled
+            ? (deleteIndex) async {
+                Navigator.of(context).pop();
+                await _deletePhoto(deleteIndex);
+              }
+            : null,
+        onReorder: widget.enabled
+            ? (oldIndex, newIndex) {
+                final updatedUrls = List<String>.from(widget.photoUrls);
+                final item = updatedUrls.removeAt(oldIndex);
+                updatedUrls.insert(
+                  newIndex > oldIndex ? newIndex - 1 : newIndex,
+                  item,
+                );
+                widget.onPhotosChanged(updatedUrls);
+                Navigator.of(context).pop();
+              }
+            : null,
       ),
     );
   }

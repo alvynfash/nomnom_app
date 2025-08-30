@@ -1,50 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:nomnom/models/meal_plan.dart';
-import 'package:nomnom/models/meal_slot.dart';
-import 'package:nomnom/models/recipe.dart';
+
 import 'package:nomnom/screens/meal_plan_screen.dart';
 import 'package:nomnom/widgets/meal_plan_calendar_widget.dart';
 
 void main() {
   group('MealPlanScreen', () {
-    late List<MealSlot> testMealSlots;
-    late List<Recipe> testRecipes;
-    late MealPlan testMealPlan;
-
     setUp(() {
-      testMealSlots = [
-        MealSlot(id: 'breakfast', name: 'Breakfast', order: 1, isDefault: true),
-        MealSlot(id: 'lunch', name: 'Lunch', order: 2, isDefault: true),
-        MealSlot(id: 'dinner', name: 'Dinner', order: 3, isDefault: true),
-      ];
-
-      testRecipes = [
-        Recipe.create(
-          title: 'Test Recipe 1',
-          ingredients: [Ingredient(name: 'Test', quantity: 1, unit: 'cup')],
-          instructions: ['Test instruction'],
-          prepTime: 10,
-          cookTime: 20,
-          servings: 2,
-        ),
-        Recipe.create(
-          title: 'Test Recipe 2',
-          ingredients: [Ingredient(name: 'Test 2', quantity: 2, unit: 'cups')],
-          instructions: ['Test instruction 2'],
-          prepTime: 15,
-          cookTime: 25,
-          servings: 4,
-        ),
-      ];
-
-      testMealPlan = MealPlan.create(
-        name: 'Test Meal Plan',
-        familyId: 'family123',
-        startDate: DateTime(2024, 1, 15), // Monday
-        mealSlots: testMealSlots.map((slot) => slot.id).toList(),
-        createdBy: 'user123',
-      );
+      // Test setup if needed
     });
 
     Widget createWidget({String? mealPlanId, String? familyId}) {

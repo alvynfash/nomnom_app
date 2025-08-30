@@ -44,7 +44,6 @@ class _MealSlotWidgetState extends State<MealSlotWidget>
     with SingleTickerProviderStateMixin {
   late AnimationController _animationController;
   late Animation<double> _scaleAnimation;
-  bool _isPressed = false;
 
   @override
   void initState() {
@@ -66,27 +65,18 @@ class _MealSlotWidgetState extends State<MealSlotWidget>
 
   void _handleTapDown(TapDownDetails details) {
     if (widget.isEditable) {
-      setState(() {
-        _isPressed = true;
-      });
       _animationController.forward();
     }
   }
 
   void _handleTapUp(TapUpDetails details) {
     if (widget.isEditable) {
-      setState(() {
-        _isPressed = false;
-      });
       _animationController.reverse();
     }
   }
 
   void _handleTapCancel() {
     if (widget.isEditable) {
-      setState(() {
-        _isPressed = false;
-      });
       _animationController.reverse();
     }
   }

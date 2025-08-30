@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../models/recipe.dart';
-import '../services/recipe_service.dart';
+import '../utils/image_utils.dart';
 
 /// A dialog for selecting recipes from the family's recipe collection
 class RecipeSelectionDialog extends StatefulWidget {
@@ -151,10 +151,6 @@ class _RecipeSelectionDialogState extends State<RecipeSelectionDialog> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
     return Dialog(
       child: Container(
         width: MediaQuery.of(context).size.width * 0.9,
@@ -369,7 +365,6 @@ class _RecipeSelectionDialogState extends State<RecipeSelectionDialog> {
   ) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8.0),
@@ -415,8 +410,8 @@ class _RecipeSelectionDialogState extends State<RecipeSelectionDialog> {
         color: colorScheme.surfaceContainerLow,
         borderRadius: BorderRadius.circular(8.0),
         image: recipe.photoUrls.isNotEmpty
-            ? DecorationImage(
-                image: NetworkImage(recipe.photoUrls.first),
+            ? ImageUtils.buildDecorationImage(
+                recipe.photoUrls.first,
                 fit: BoxFit.cover,
               )
             : null,

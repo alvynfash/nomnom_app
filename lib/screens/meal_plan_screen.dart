@@ -370,10 +370,11 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
               ),
               TextButton(
                 onPressed: () async {
-                  Navigator.of(context).pop(false);
+                  final navigator = Navigator.of(context);
+                  navigator.pop(false);
                   await _saveMealPlan();
                   if (mounted) {
-                    Navigator.of(context).pop();
+                    navigator.pop();
                   }
                 },
                 child: const Text('Save'),
@@ -409,9 +410,10 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
       canPop: !_hasUnsavedChanges,
       onPopInvokedWithResult: (didPop, result) async {
         if (!didPop) {
+          final navigator = Navigator.of(context);
           final shouldPop = await _onWillPop();
           if (shouldPop && mounted) {
-            Navigator.of(context).pop();
+            navigator.pop();
           }
         }
       },

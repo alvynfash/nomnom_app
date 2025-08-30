@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/recipe.dart';
@@ -129,8 +130,13 @@ class _RecipeEditScreenState extends State<RecipeEditScreen> {
 
   void _onFormChanged() {
     if (!_hasUnsavedChanges) {
-      setState(() {
-        _hasUnsavedChanges = true;
+      // Use post-frame callback to avoid setState during build
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted && !_hasUnsavedChanges) {
+          setState(() {
+            _hasUnsavedChanges = true;
+          });
+        }
       });
     }
 

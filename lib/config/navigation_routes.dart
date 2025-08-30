@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../models/navigation_route.dart';
 import '../screens/recipe_list_screen.dart';
+import '../screens/meal_plan_list_screen.dart';
 
 /// Configuration class for app navigation routes
 class NavigationRoutes {
@@ -27,7 +28,7 @@ class NavigationRoutes {
       id: mealPlanning,
       title: 'Meal Planning',
       icon: Icons.calendar_today_rounded,
-      screen: const _PlaceholderScreen(title: 'Meal Planning'),
+      screen: const MealPlanListScreen(),
       isPrimary: true,
     ),
 

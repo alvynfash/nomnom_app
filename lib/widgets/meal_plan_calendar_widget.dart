@@ -135,10 +135,6 @@ class _MealPlanCalendarWidgetState extends State<MealPlanCalendarWidget> {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
-    final textTheme = theme.textTheme;
-
     return Column(
       children: [
         // Week navigation header

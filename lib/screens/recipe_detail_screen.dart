@@ -3,6 +3,8 @@ import 'package:flutter/services.dart';
 import 'package:share_plus/share_plus.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
+import '../utils/fade_page_route.dart';
+import '../utils/image_utils.dart';
 import 'recipe_edit_screen.dart';
 
 class RecipeDetailScreen extends StatefulWidget {
@@ -41,16 +43,14 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   void _navigateToEdit() async {
-    final result = await Navigator.push<bool>(
+    final result = await FadeNavigation.push<bool>(
       context,
-      MaterialPageRoute(
-        builder: (context) => RecipeEditScreen(
-          recipe: _recipe,
-          onRecipeSaved: () {
-            _refreshRecipe();
-            widget.onRecipeUpdated?.call();
-          },
-        ),
+      RecipeEditScreen(
+        recipe: _recipe,
+        onRecipeSaved: () {
+          _refreshRecipe();
+          widget.onRecipeUpdated?.call();
+        },
       ),
     );
 
@@ -505,24 +505,15 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
                     colors: [Colors.transparent, Colors.black26],
                   ),
                 ),
-                child: Image.network(
+                child: ImageUtils.buildImage(
                   _recipe.photoUrls[index],
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return _buildDefaultBackground(colorScheme);
-                  },
-                  loadingBuilder: (context, child, loadingProgress) {
-                    if (loadingProgress == null) return child;
-                    return Center(
-                      child: CircularProgressIndicator(
-                        value: loadingProgress.expectedTotalBytes != null
-                            ? loadingProgress.cumulativeBytesLoaded /
-                                  loadingProgress.expectedTotalBytes!
-                            : null,
-                        color: colorScheme.onPrimary,
-                      ),
-                    );
-                  },
+                  errorWidget: _buildDefaultBackground(colorScheme),
+                  loadingWidget: Center(
+                    child: CircularProgressIndicator(
+                      color: colorScheme.onPrimary,
+                    ),
+                  ),
                 ),
               ),
             );
@@ -580,13 +571,12 @@ class _RecipeDetailScreenState extends State<RecipeDetailScreen> {
   }
 
   void _showFullScreenPhoto(int initialIndex) {
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (context) => _FullScreenPhotoGallery(
-          photoUrls: _recipe.photoUrls,
-          initialIndex: initialIndex,
-          recipeTitle: _recipe.title,
-        ),
+    FadeNavigation.push(
+      context,
+      _FullScreenPhotoGallery(
+        photoUrls: _recipe.photoUrls,
+        initialIndex: initialIndex,
+        recipeTitle: _recipe.title,
       ),
     );
   }
@@ -1045,40 +1035,22 @@ class _FullScreenPhotoGalleryState extends State<_FullScreenPhotoGallery> {
         itemBuilder: (context, index) {
           return InteractiveViewer(
             child: Center(
-              child: Image.network(
+              child: ImageUtils.buildImage(
                 widget.photoUrls[index],
                 fit: BoxFit.contain,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.error_rounded,
-                          color: Colors.white,
-                          size: 48,
-                        ),
-                        SizedBox(height: 16),
-                        Text(
-                          'Failed to load image',
-                          style: TextStyle(color: Colors.white),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                loadingBuilder: (context, child, loadingProgress) {
-                  if (loadingProgress == null) return child;
-                  return Center(
-                    child: CircularProgressIndicator(
-                      value: loadingProgress.expectedTotalBytes != null
-                          ? loadingProgress.cumulativeBytesLoaded /
-                                loadingProgress.expectedTotalBytes!
-                          : null,
-                      color: Colors.white,
-                    ),
-                  );
-                },
+                errorWidget: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.error_rounded, color: Colors.white, size: 48),
+                      SizedBox(height: 16),
+                      Text(
+                        'Failed to load image',
+                        style: TextStyle(color: Colors.white),
+                      ),
+                    ],
+                  ),
+                ),
               ),
             ),
           );

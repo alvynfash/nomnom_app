@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:nomnom/models/meal_plan.dart';
 import 'package:nomnom/models/meal_slot.dart';
-import 'package:nomnom/models/recipe.dart';
 import 'package:nomnom/widgets/meal_plan_calendar_widget.dart';
 import 'package:nomnom/widgets/meal_slot_widget.dart';
 

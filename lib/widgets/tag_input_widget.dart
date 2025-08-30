@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 
 /// A widget for inputting and managing tags with autocomplete functionality
 class TagInputWidget extends StatefulWidget {
@@ -97,8 +98,12 @@ class _TagInputWidgetState extends State<TagInputWidget> {
       setState(() {
         _tags = List.from(widget.initialTags);
       });
-      // Notify about the change
-      widget.onTagsChanged(_tags);
+      // Notify about the change after the current build completes
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onTagsChanged(_tags);
+        }
+      });
     }
 
     // Update suggestions if they changed
@@ -291,7 +296,11 @@ class _TagInputWidgetState extends State<TagInputWidget> {
       _tags.add(trimmed);
     });
 
-    widget.onTagsChanged(_tags);
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        widget.onTagsChanged(_tags);
+      }
+    });
     _updateSuggestions();
   }
 
@@ -300,7 +309,11 @@ class _TagInputWidgetState extends State<TagInputWidget> {
       setState(() {
         _tags.removeAt(index);
       });
-      widget.onTagsChanged(_tags);
+      SchedulerBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          widget.onTagsChanged(_tags);
+        }
+      });
       _updateSuggestions();
     }
   }

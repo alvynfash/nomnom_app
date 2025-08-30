@@ -59,7 +59,7 @@
   - Write widget tests for recipe selection interactions
   - _Requirements: 2.1, 2.5_
 
-- [-] 5. Build main meal planning screen
+- [x] 5. Build main meal planning screen
 - [x] 5.1 Create MealPlanScreen with calendar integration
   - Build main screen with MealPlanCalendarWidget integration
   - Implement meal plan creation and editing interface
@@ -67,7 +67,7 @@
   - Create screen-level tests for meal planning workflows
   - _Requirements: 1.1, 1.5, 2.1, 5.1, 5.3_
 
-- [ ] 5.2 Add meal plan CRUD interface
+- [x] 5.2 Add meal plan CRUD interface
   - Implement meal plan creation form with name and date selection
   - Add meal plan editing capabilities with save/cancel functionality
   - Create meal plan deletion with confirmation dialogs
@@ -75,14 +75,14 @@
   - _Requirements: 1.1, 1.4, 6.1_
 
 - [ ] 6. Implement template management system
-- [ ] 6.1 Add template creation functionality
+- [x] 6.1 Add template creation functionality
   - Implement saveAsTemplate method in MealPlanService
   - Create template naming and description interface
   - Add template validation and duplicate name handling
   <!-- - Write unit tests for template creation operations -->
   - _Requirements: 3.1, 3.2, 3.5_
 
-- [ ] 6.2 Build template library interface
+- [x] 6.2 Build template library interface
   - Create TemplateManagementScreen for viewing saved templates
   - Implement template search and filtering capabilities
   - Add template preview with meal assignment summary

@@ -444,4 +444,285 @@ class MealPlanService {
 
     return endDate.difference(now).inDays + 1;
   }
+
+  // Template operations
+
+  /// Save a meal plan as a reusable template
+  Future<MealPlan> saveAsTemplate(
+    String planId,
+    String templateName,
+    String? description,
+  ) async {
+    try {
+      // Get the existing meal plan
+      final mealPlan = await getMealPlanById(planId);
+      if (mealPlan == null) {
+        throw MealPlanException('Meal plan not found', 'MEAL_PLAN_NOT_FOUND');
+      }
+
+      // Validate template name
+      if (templateName.trim().isEmpty) {
+        throw MealPlanException(
+          'Template name cannot be empty',
+          'INVALID_TEMPLATE_NAME',
+        );
+      }
+
+      if (templateName.length > 50) {
+        throw MealPlanException(
+          'Template name cannot exceed 50 characters',
+          'INVALID_TEMPLATE_NAME',
+        );
+      }
+
+      // Check for duplicate template names within the family
+      final existingTemplates = await getTemplates(familyId: mealPlan.familyId);
+      final duplicateName = existingTemplates.any(
+        (template) =>
+            template.templateName?.toLowerCase() == templateName.toLowerCase(),
+      );
+
+      if (duplicateName) {
+        throw MealPlanException(
+          'A template with this name already exists',
+          'DUPLICATE_TEMPLATE_NAME',
+        );
+      }
+
+      // Create template from meal plan
+      // Templates don't have specific start dates - they use a reference date
+      final currentYear = DateTime.now().year;
+      final referenceDate = DateTime(
+        currentYear,
+        1,
+        1,
+      ); // Monday reference date for current year
+
+      // Convert assignments to use relative dates (days 0-27 from reference)
+      final templateAssignments = <String, String?>{};
+      for (final entry in mealPlan.assignments.entries) {
+        if (entry.value != null) {
+          final parts = entry.key.split('_');
+          if (parts.length == 2) {
+            try {
+              final originalDate = DateTime.parse(parts[0]);
+              final dayOffset = originalDate
+                  .difference(mealPlan.startDate)
+                  .inDays;
+
+              // Only include assignments within the 4-week period
+              if (dayOffset >= 0 && dayOffset < 28) {
+                final templateDate = referenceDate.add(
+                  Duration(days: dayOffset),
+                );
+                final templateKey = generateAssignmentKey(
+                  templateDate,
+                  parts[1],
+                );
+                templateAssignments[templateKey] = entry.value;
+              }
+            } catch (e) {
+              // Skip invalid date formats
+              continue;
+            }
+          }
+        }
+      }
+
+      // Create the template
+      final template = MealPlan.create(
+        name: templateName,
+        familyId: mealPlan.familyId,
+        startDate: referenceDate,
+        mealSlots: List.from(mealPlan.mealSlots),
+        assignments: templateAssignments,
+        isTemplate: true,
+        templateName: templateName,
+        templateDescription: description?.trim().isEmpty == true
+            ? null
+            : description?.trim(),
+        createdBy: mealPlan.createdBy,
+      );
+
+      // Validate the template
+      template.validate();
+
+      // Save the template
+      await createMealPlan(template);
+
+      return template;
+    } catch (e) {
+      if (e is MealPlanException) {
+        rethrow;
+      }
+      throw MealPlanException(
+        'Failed to save meal plan as template: ${e.toString()}',
+        'SAVE_TEMPLATE_ERROR',
+      );
+    }
+  }
+
+  /// Get all templates, optionally filtered by family ID
+  Future<List<MealPlan>> getTemplates({String? familyId}) async {
+    try {
+      final allMealPlans = await getMealPlans(familyId: familyId);
+      return allMealPlans.where((plan) => plan.isTemplate).toList();
+    } catch (e) {
+      throw MealPlanException(
+        'Failed to get templates: ${e.toString()}',
+        'GET_TEMPLATES_ERROR',
+      );
+    }
+  }
+
+  /// Apply a template to create a new meal plan for a specific start date
+  Future<MealPlan> applyTemplate(String templateId, DateTime startDate) async {
+    try {
+      // Get the template
+      final template = await getMealPlanById(templateId);
+      if (template == null) {
+        throw MealPlanException('Template not found', 'TEMPLATE_NOT_FOUND');
+      }
+
+      if (!template.isTemplate) {
+        throw MealPlanException(
+          'The specified meal plan is not a template',
+          'NOT_A_TEMPLATE',
+        );
+      }
+
+      // Validate start date
+      final oneYearAgo = DateTime.now().subtract(const Duration(days: 365));
+      if (startDate.isBefore(oneYearAgo)) {
+        throw MealPlanException(
+          'Start date cannot be more than 1 year in the past',
+          'INVALID_START_DATE',
+        );
+      }
+
+      // Convert template assignments to the new start date
+      final newAssignments = <String, String?>{};
+      for (final entry in template.assignments.entries) {
+        if (entry.value != null) {
+          final parts = entry.key.split('_');
+          if (parts.length == 2) {
+            try {
+              final templateDate = DateTime.parse(parts[0]);
+              final dayOffset = templateDate
+                  .difference(template.startDate)
+                  .inDays;
+
+              // Map to new date
+              final newDate = startDate.add(Duration(days: dayOffset));
+              final newKey = generateAssignmentKey(newDate, parts[1]);
+              newAssignments[newKey] = entry.value;
+            } catch (e) {
+              // Skip invalid date formats
+              continue;
+            }
+          }
+        }
+      }
+
+      // Create new meal plan from template
+      final newMealPlan = MealPlan.create(
+        name: 'Meal Plan from ${template.templateName}',
+        familyId: template.familyId,
+        startDate: startDate,
+        mealSlots: List.from(template.mealSlots),
+        assignments: newAssignments,
+        isTemplate: false,
+        createdBy: template.createdBy,
+      );
+
+      // Validate and save the new meal plan
+      newMealPlan.validate();
+      await createMealPlan(newMealPlan);
+
+      return newMealPlan;
+    } catch (e) {
+      if (e is MealPlanException) {
+        rethrow;
+      }
+      throw MealPlanException(
+        'Failed to apply template: ${e.toString()}',
+        'APPLY_TEMPLATE_ERROR',
+      );
+    }
+  }
+
+  /// Delete a template
+  Future<void> deleteTemplate(String templateId) async {
+    try {
+      // Verify it's actually a template before deleting
+      final template = await getMealPlanById(templateId);
+      if (template == null) {
+        throw MealPlanException('Template not found', 'TEMPLATE_NOT_FOUND');
+      }
+
+      if (!template.isTemplate) {
+        throw MealPlanException(
+          'The specified meal plan is not a template',
+          'NOT_A_TEMPLATE',
+        );
+      }
+
+      await deleteMealPlan(templateId);
+    } catch (e) {
+      if (e is MealPlanException) {
+        rethrow;
+      }
+      throw MealPlanException(
+        'Failed to delete template: ${e.toString()}',
+        'DELETE_TEMPLATE_ERROR',
+      );
+    }
+  }
+
+  /// Check if a template name is available within a family
+  Future<bool> isTemplateNameAvailable(
+    String templateName,
+    String familyId,
+  ) async {
+    try {
+      final existingTemplates = await getTemplates(familyId: familyId);
+      return !existingTemplates.any(
+        (template) =>
+            template.templateName?.toLowerCase() == templateName.toLowerCase(),
+      );
+    } catch (e) {
+      throw MealPlanException(
+        'Failed to check template name availability: ${e.toString()}',
+        'CHECK_TEMPLATE_NAME_ERROR',
+      );
+    }
+  }
+
+  /// Get template statistics (number of recipes, meal slots, etc.)
+  Map<String, dynamic> getTemplateStats(MealPlan template) {
+    if (!template.isTemplate) {
+      throw MealPlanException(
+        'The specified meal plan is not a template',
+        'NOT_A_TEMPLATE',
+      );
+    }
+
+    final assignedSlots = template.assignments.values
+        .where((recipeId) => recipeId != null)
+        .length;
+
+    final totalSlots = template.mealSlots.length * 28; // 4 weeks
+    final uniqueRecipes = template.recipeIds.length;
+
+    return {
+      'totalSlots': totalSlots,
+      'assignedSlots': assignedSlots,
+      'emptySlots': totalSlots - assignedSlots,
+      'uniqueRecipes': uniqueRecipes,
+      'completionPercentage': totalSlots > 0
+          ? (assignedSlots / totalSlots * 100).round()
+          : 0,
+      'mealSlotsCount': template.mealSlots.length,
+    };
+  }
 }

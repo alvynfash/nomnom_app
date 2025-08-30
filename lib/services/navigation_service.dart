@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../config/navigation_routes.dart';
 import '../models/navigation_route.dart';
+import '../utils/fade_page_route.dart';
 import '../widgets/main_scaffold.dart';
 
 /// Exception thrown when navigation fails
@@ -104,7 +105,11 @@ class NavigationService {
   /// Safely close drawer if open
   static void safeCloseDrawer(BuildContext context) {
     try {
-      if (context.mounted && Scaffold.of(context).isDrawerOpen) {
+      if (!context.mounted) return;
+
+      // Try to find a Scaffold ancestor
+      final scaffoldState = Scaffold.maybeOf(context);
+      if (scaffoldState != null && scaffoldState.isDrawerOpen) {
         Navigator.of(context).pop();
       }
     } catch (e) {
@@ -127,10 +132,10 @@ class NavigationService {
       // Validate route has required properties
       // Note: route.screen is non-nullable in NavigationRoute model
 
-      // Attempt navigation
+      // Attempt navigation with fade transition
       await Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (context) => MainScaffold(
+        FadePageRoute(
+          child: MainScaffold(
             currentScreen: route.screen,
             title: route.title,
             currentRoute: route.id,

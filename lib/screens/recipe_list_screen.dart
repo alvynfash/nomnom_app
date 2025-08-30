@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/recipe.dart';
 import '../services/recipe_service.dart';
+import '../utils/fade_page_route.dart';
+import '../utils/image_utils.dart';
 import '../widgets/search_bar_widget.dart';
 import 'recipe_edit_screen.dart';
 import 'recipe_detail_screen.dart';
@@ -146,34 +148,24 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
   }
 
   void _navigateToCreateRecipe() {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RecipeEditScreen(onRecipeSaved: _loadRecipes),
-      ),
-    );
+    FadeNavigation.push(context, RecipeEditScreen(onRecipeSaved: _loadRecipes));
   }
 
   void _navigateToRecipeDetail(Recipe recipe) {
-    Navigator.push(
+    FadeNavigation.push(
       context,
-      MaterialPageRoute(
-        builder: (context) => RecipeDetailScreen(
-          recipe: recipe,
-          onRecipeUpdated: _loadRecipes,
-          onRecipeDeleted: _loadRecipes,
-        ),
+      RecipeDetailScreen(
+        recipe: recipe,
+        onRecipeUpdated: _loadRecipes,
+        onRecipeDeleted: _loadRecipes,
       ),
     );
   }
 
   void _navigateToEditRecipe(Recipe recipe) {
-    Navigator.push(
+    FadeNavigation.push(
       context,
-      MaterialPageRoute(
-        builder: (context) =>
-            RecipeEditScreen(recipe: recipe, onRecipeSaved: _loadRecipes),
-      ),
+      RecipeEditScreen(recipe: recipe, onRecipeSaved: _loadRecipes),
     );
   }
 
@@ -479,27 +471,14 @@ class _RecipeListScreenState extends State<RecipeListScreen> {
         photoUrl.startsWith('http://') || photoUrl.startsWith('https://');
 
     if (isNetworkUrl) {
-      return Image.network(
+      return ImageUtils.buildImage(
         photoUrl,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) {
-          return _buildDefaultCardImage(recipe, colorScheme);
-        },
-        loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Container(
-            color: colorScheme.surfaceContainerHighest,
-            child: Center(
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                value: loadingProgress.expectedTotalBytes != null
-                    ? loadingProgress.cumulativeBytesLoaded /
-                          loadingProgress.expectedTotalBytes!
-                    : null,
-              ),
-            ),
-          );
-        },
+        errorWidget: _buildDefaultCardImage(recipe, colorScheme),
+        loadingWidget: Container(
+          color: colorScheme.surfaceContainerHighest,
+          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        ),
       );
     } else {
       // Local file
